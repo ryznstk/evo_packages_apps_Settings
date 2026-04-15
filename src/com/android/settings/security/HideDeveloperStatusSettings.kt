@@ -50,7 +50,7 @@ import com.android.settings.R
 
 import com.google.android.material.appbar.AppBarLayout
 
-class HideDeveloperStatusSettings: Fragment(R.layout.hide_developer_status_layout) {
+class HideDeveloperStatusSettings : Fragment(R.layout.hide_applist_layout) {
 
     private lateinit var activityManager: ActivityManager
     private lateinit var packageManager: PackageManager
@@ -71,10 +71,7 @@ class HideDeveloperStatusSettings: Fragment(R.layout.hide_developer_status_layou
     override fun onStart() {
         super.onStart()
         updateOptionsMenu()
-        val host = getActivity()
-        if (host != null) {
-            host.invalidateOptionsMenu();
-        }
+        activity?.invalidateOptionsMenu()
     }
 
     @SuppressLint("QueryPermissionsNeeded")
@@ -99,7 +96,7 @@ class HideDeveloperStatusSettings: Fragment(R.layout.hide_developer_status_layou
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         adapter = AppListAdapter()
-        recyclerView = view.findViewById<RecyclerView>(R.id.apps_list).also {
+        recyclerView = view.findViewById<RecyclerView>(R.id.user_list_view).also {
             it!!.layoutManager = LinearLayoutManager(context)
             it!!.adapter = adapter
         } as RecyclerView
@@ -125,10 +122,12 @@ class HideDeveloperStatusSettings: Fragment(R.layout.hide_developer_status_layou
             return;
         }
         optionsMenu = menu;
-        inflater.inflate(R.menu.hide_developer_status_menu, menu)
+        inflater.inflate(R.menu.hide_applist_menu, menu)
 
         menu.findItem(R.id.show_system).setVisible(showSystem)
         menu.findItem(R.id.hide_system).setVisible(!showSystem)
+        menu.findItem(R.id.show_overlay).setVisible(false)
+        menu.findItem(R.id.hide_overlay).setVisible(false)
 
         val searchMenuItem = menu.findItem(R.id.search) as MenuItem
         searchMenuItem.setOnActionExpandListener(object: MenuItem.OnActionExpandListener {
@@ -182,14 +181,13 @@ class HideDeveloperStatusSettings: Fragment(R.layout.hide_developer_status_layou
     }
 
     private fun updateOptionsMenu() {
-        if (optionsMenu == null) {
-            return;
-        }
-
+        if (optionsMenu == null) return
         var menu = optionsMenu as Menu
-
         menu.findItem(R.id.show_system).setVisible(!showSystem)
         menu.findItem(R.id.hide_system).setVisible(showSystem)
+        // overlay items exist in shared menu but are not used here
+        menu.findItem(R.id.show_overlay).setVisible(false)
+        menu.findItem(R.id.hide_overlay).setVisible(false)
     }
 
     /**
@@ -217,7 +215,8 @@ class HideDeveloperStatusSettings: Fragment(R.layout.hide_developer_status_layou
     }
 
     private fun refreshList() {
-        val ctx = context ?: return
+        if (!isAdded || context == null) return
+        val ctx = requireContext()
         
         var list = packageList.filter {
             if (!showSystem) {
@@ -265,7 +264,7 @@ class HideDeveloperStatusSettings: Fragment(R.layout.hide_developer_status_layou
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int) =
             AppListViewHolder(layoutInflater.inflate(
-                R.layout.hide_developer_status_list_item, parent, false))
+                R.layout.hide_applist_list_item, parent, false))
 
         override fun onBindViewHolder(holder: AppListViewHolder, position: Int) {
             getItem(position).let {
@@ -297,11 +296,11 @@ class HideDeveloperStatusSettings: Fragment(R.layout.hide_developer_status_layou
         }
     }
 
-    private class AppListViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
-        val icon: ImageView? = itemView.findViewById(R.id.icon)
-        val label: TextView? = itemView.findViewById(R.id.label)
-        val packageName: TextView? = itemView.findViewById(R.id.packageName)
-        val checkBox: CheckBox? = itemView.findViewById(R.id.checkBox)
+    private class AppListViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        val icon: ImageView? = itemView.findViewById(R.id.app_icon)
+        val label: TextView? = itemView.findViewById(R.id.app_name)
+        val packageName: TextView? = itemView.findViewById(R.id.package_name)
+        val checkBox: CheckBox? = itemView.findViewById(R.id.check_box)
     }
 
     private data class AppInfo(
